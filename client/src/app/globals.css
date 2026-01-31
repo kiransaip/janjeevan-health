@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  /* Light mode: blue-50 (#eff6ff) to white */
+  background: linear-gradient(to bottom, #eff6ff, #ffffff);
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  background-attachment: fixed;
+  /* Keeps gradient fixed while scrolling */
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    /* Dark mode: zinc-900 (#18181b) to black */
+    background: linear-gradient(to bottom, #18181b, #000000);
+  }
+}

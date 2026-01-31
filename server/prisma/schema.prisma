@@ -1,0 +1,173 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   // PATIENT, ASHA, DOCTOR, PHARMACIST
+  createdAt DateTime @default(now())
+
+  // Relations
+  patientProfile Patient?
+  doctorProfile  Doctor?
+  ashaProfile    AshaWorker?
+  pharmacistProfile Pharmacist?
+}
+
+model Patient {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  
+  dateOfBirth DateTime?
+  gender      String?
+  address     String?
+  contact     String?
+  
+  ashaId      String?
+  ashaWorker  AshaWorker? @relation(fields: [ashaId], references: [id])
+  
+  appointments Appointment[]
+  symptoms     SymptomRecord[]
+  prescriptions Prescription[]
+}
+
+model AshaWorker {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  
+  patients  Patient[]
+}
+
+model Doctor {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  
+  appointments Appointment[]
+}
+
+model Pharmacist {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Appointment {
+  id        String   @id @default(uuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  
+  doctorId  String?
+  doctor    Doctor?  @relation(fields: [doctorId], references: [id])
+  
+  status    String   // PENDING, APPROVED, COMPLETED, CANCELLED
+  datetime  DateTime
+  
+  symptoms     String? // Comma separated or JSON
+  diagnosis    String?
+  notes        String?
+  aiAnalysis   String? // JSON: {severity, recommendations, urgency}
+  videoCallUrl String? // For video consultation
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prescription Prescription?
+  followUps    FollowUp[]
+}
+
+model Prescription {
+  id            String   @id @default(uuid())
+  appointmentId String   @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  
+  patientId     String
+  patient       Patient @relation(fields: [patientId], references: [id])
+
+  medications   String   // JSON string of medications: [{name, dosage, quantity}]
+  status        String   // PENDING, DISPENSED
+  dispensedBy   String?  // User ID of pharmacist who dispensed
+  dispensedAt   DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SymptomRecord {
+  id        String   @id @default(uuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  
+  symptoms  String
+  severity  String   // MINOR, SEVERE
+  advice    String?
+  
+  createdAt DateTime @default(now())
+}
+
+model Inventory {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  stock           Int
+  unit            String
+  reorderThreshold Int     @default(10)
+  updatedAt       DateTime @updatedAt
+  
+  reorderRequests ReorderRequest[]
+}
+
+model FollowUp {
+  id            String   @id @default(uuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  scheduledDate DateTime
+  status        String   // PENDING, COMPLETED, CANCELLED
+  notes         String?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model ReorderRequest {
+  id          String   @id @default(uuid())
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  quantity    Int
+  status      String   // PENDING, ORDERED, RECEIVED
+  requestedBy String   // User ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Hospital {
+  id             String   @id @default(uuid())
+  name           String
+  city           String
+  address        String
+  specialities   String   // JSON or comma separated
+  openTime       String   // e.g. "09:00"
+  closeTime      String   // e.g. "21:00"
+  isOpen         Boolean  @default(true)
+  contact        String?
+  createdAt      DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
