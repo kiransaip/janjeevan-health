@@ -1,16 +1,10 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
-import twilio from 'twilio';
+
 
 const router = Router();
 const prisma = new PrismaClient();
-
-// Initialize Twilio client
-const twilioClient = twilio(
-    process.env.TWILIO_SID,
-    process.env.TWILIO_TOKEN
-);
 
 // Get Appointments
 router.get('/', authenticate, async (req: AuthRequest, res) => {
@@ -197,62 +191,13 @@ This is an automated alert from JanJeevan Health System.
         // Example:
         // await sendEmail(emailContent);
 
-        // Send SMS notification via Twilio
-        const doctorPhone = process.env.DOCTOR_PHONE || '+918019921150';
-        const smsMessage = `🚨 URGENT MEDICAL CASE
+        // SMS Removed as per request
+        res.json({
+            success: true,
+            message: 'Urgent notification processed (Email-only log)',
+            emailPreview: emailContent
+        });
 
-Patient: ${patientName}
-Contact: ${patientContact}
-Urgency: ${urgency}
-
-Symptoms: ${symptoms}
-
-AI Recommendations:
-${recommendations?.slice(0, 2).map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}
-
-Join Video Call NOW:
-${meetingLink}
-
-Appointment ID: ${appointmentId}
-
-- JanJeevan Health`;
-
-        try {
-            /* 
-               REAL SMS SENDING (Commented out/Guarded for Trial Account)
-               To enable real SMS, verify numbers or upgrade Twilio account.
-            */
-            // const message = await twilioClient.messages.create({
-            //     body: smsMessage,
-            //     from: process.env.TWILIO_PHONE,
-            //     to: doctorPhone
-            // });
-
-            // MOCK MODE: Log success and proceed
-            console.log('📱 [MOCK MODE] SMS Simulation:');
-            console.log(`To: ${doctorPhone}`);
-            console.log(`Body: ${smsMessage}`);
-            console.log('-----------------------------------');
-
-            res.json({
-                success: true,
-                message: 'Urgent notification processed (Mock Mode)',
-                emailPreview: emailContent,
-                sms: {
-                    sid: 'mock-sid-12345',
-                    to: doctorPhone,
-                    status: 'queued'
-                }
-            });
-        } catch (smsError: any) {
-            console.error('❌ Unexpected SMS Error:', smsError.message);
-            // Even if it fails, we return success for the UI
-            res.json({
-                success: true,
-                message: 'Notification processed (SMS skipped)',
-                emailPreview: emailContent
-            });
-        }
     } catch (error) {
         console.error('Failed to send urgent notification:', error);
         res.status(500).json({ error: 'Failed to send notification' });
